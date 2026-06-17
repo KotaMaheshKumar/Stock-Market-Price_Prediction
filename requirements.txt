@@ -1,0 +1,30 @@
+# CORE WEB FRAMEWORK & SERVER
+fastapi==0.111.0
+uvicorn[standard]==0.30.1
+
+#  DATA SCIENCE, MACHINE LEARNING & MATHEMATICS
+numpy==1.26.4
+pandas==2.2.2
+#scikit-learn==1.5.0
+scipy==1.13.1
+statsmodels==0.14.2
+matplotlib==3.9.0
+
+
+# DATA VALIDATION, DATABASE & CONFIGURATION
+pydantic==2.7.4
+pydantic-settings==2.3.4
+sqlalchemy==2.0.31
+asyncpg==0.29.0
+alembic==1.13.1
+python-dotenv==1.0.1
+
+# NETWORKING & UTILITIES
+httpx==0.27.0
+loguru==0.7.2
+
+# TESTING, CODE QUALITY & LINTING
+pytest==8.2.2
+pytest-asyncio==0.23.7
+black==24.4.2
+ruff==0.4.8

@@ -1,0 +1,695 @@
+pip install yfinance
+
+pip install YahooFinancials
+
+from google.colab import files
+import yfinance as yf
+import pandas as pd
+
+ticker = yf.Ticker('^AORD')
+Aord = yf.download('^AORD', start = '2012-1-1')
+Aord.to_csv('aord.csv')
+files.download('aord.csv')
+
+ticker = yf.Ticker('^FCHI')
+Cac40 = yf.download('^FCHI', start = '2012-01-01')
+Cac40.to_csv('cac40.csv')
+files.download('cac40.csv')
+
+ticker = yf.Ticker('^GDAXI')
+Daxi = yf.download('^GDAXI', start = '2012-01-01')
+Daxi.to_csv('daxi.csv')
+files.download('daxi.csv')
+
+ticker = yf.Ticker('^DJI')
+Dji = yf.download('^DJI', start = '2012-01-01')
+Dji.to_csv('dji.csv')
+files.download('dji.csv')
+
+ticker = yf.Ticker('^HSI')
+Hsi = yf.download('^HSI', start = '2012-01-01')
+Hsi.to_csv('hsi.csv')
+files.download('hsi.csv')
+
+ticker = yf.Ticker('^IXIC')
+Nasdaq_composite = yf.download('^IXIC', start = '2012-01-01')
+Nasdaq_composite.to_csv('nasdaq.csv')
+files.download('nasdaq.csv')
+
+ticker = yf.Ticker('^N225')
+Nikkei225 = yf.download('^N225', start = '2012-01-01')
+Nikkei225.to_csv('nikkei225.csv')
+files.download('nikkei225.csv')
+
+ticker = yf.Ticker('SPY')
+Spy = yf.download('SPY', start = '2012-01-01')
+Spy.to_csv('spy.csv')
+files.download('spy.csv')
+
+ticker = yf.Ticker('^GSPC')
+SP500 = yf.download('^GSPC', start = '2012-01-01')
+SP500.to_csv('sp500.csv')
+files.download('sp500.csv')
+
+IndicePanel=pd.DataFrame(index=Spy.index)
+
+#US market
+IndicePanel['spy']=Spy['Open'].shift(-1)-Spy['Open']
+IndicePanel['spy_lag1']=IndicePanel['spy'].shift(1)
+IndicePanel['sp500']=SP500["Open"]-SP500['Open'].shift(1)
+IndicePanel['nasdaq']=Nasdaq_composite['Open']-Nasdaq_composite['Open'].shift(1)
+IndicePanel['dji']=Dji['Open']-Dji['Open'].shift(1)
+
+#European Market
+IndicePanel['cac40']=Cac40['Open']-Cac40['Open'].shift(1)
+IndicePanel['daxi']=Daxi['Open']-Daxi['Open'].shift(1)
+
+#Asian Market
+IndicePanel['hsi'] = Hsi['Close'] - Hsi['Open']
+IndicePanel['nikkei'] = Nikkei225['Close'] - Nikkei225['Open'] 
+IndicePanel['aord'] = Aord['Close']- Aord['Open']
+
+IndicePanel['Price'] = Spy['Open']
+
+IndicePanel.to_csv('indicepanel.csv')
+files.download('indicepanel.csv')
+
+Tesla = yf.download('TSLA', start = '2012-01-01')
+Tesla.to_csv('tesla.csv')
+files.download('tesla.csv')
+
+Ms = yf.download('Msft', start = '2012-01-01')
+Ms.to_csv('microsoft.csv')
+files.download('microsoft.csv')
+
+Google = yf.download('GOOG', start = '2012-01-01')
+Google.to_csv('google.csv')
+files.download('google.csv')
+
+Apple = yf.download('AAPL', start = '2012-01-01')
+Apple.to_csv('apple.csv')
+files.download('apple.csv')
+
+FB = yf.download('FB', start = '2012-01-01')
+FB.to_csv('fb.csv')
+files.download('fb.csv')
+
+Amazon = yf.download('AMZN', start = '2012-01-01')
+Amazon.to_csv('amazon.csv')
+files.download('amazon.csv')
+
+import statsmodels.formula.api as smf
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+%matplotlib inline
+import warnings 
+warnings.filterwarnings("ignore")
+
+amzn = pd.read_csv('/content/amazon.csv',parse_dates = ['Date'], index_col = 'Date')
+aapl = pd.read_csv('/content/apple.csv',parse_dates = ['Date'], index_col = 'Date')
+ms = pd.read_csv('/content/microsoft.csv',parse_dates = ['Date'], index_col = 'Date')
+fb = pd.read_csv('/content/fb.csv',parse_dates = ['Date'], index_col = 'Date')
+tsla = pd.read_csv('/content/tesla.csv',parse_dates = ['Date'], index_col = 'Date')
+google = pd.read_csv('/content/google.csv',parse_dates = ['Date'], index_col = 'Date')
+
+
+company_stocks = [amzn,aapl, ms, fb, tsla, google]
+
+for i in company_stocks:
+      print(i.shape)
+      print(i.info())
+      print(i.head())
+      print('====='*30)
+
+# Price Difference
+amzn['PriceDiff'] = amzn.Close.shift(-1) - amzn.Close
+
+# Daily Return is calculated as PriceDiff/Close
+amzn['Return'] = amzn['PriceDiff'] / amzn['Close']
+
+amzn[-10:]
+
+# New "Direction" column using list comprehension: if price difference is >0 then 1 else 0
+amzn['Direction']  = [1 if amzn['PriceDiff'].loc[element] > 0 else 0 for element in amzn.index]
+print('Price Difference on {} is {} so direction is {}'.format('2020-11-11', amzn['PriceDiff'].loc['2020-11-11'], amzn['Direction'].loc['2020-11-11']))
+
+amzn.head(5)
+
+amzn['MA60'] = amzn.Close.rolling(60).mean()
+amzn['MA20'] = amzn.Close.rolling(20).mean()
+amzn.dropna()
+
+#Plotting moving average for amazon 
+plt.figure(figsize=(22,10))
+amzn['MA20'].plot(label = 'Moving Average 20')
+amzn['MA60'].plot(label='Moving Average 50')
+amzn['Close'].plot(label='Close')
+plt.legend()
+plt.show()
+
+
+# New "Shares" column to determine whether we long or not, created using list comprehension.
+
+# 'Shares' = 1 if 'MA20' is larger than 'MA60', otherwise it is zero
+amzn['Shares'] = [1 if amzn.loc[element,'MA20'] > amzn.loc[element, 'MA60'] else 0 for element in amzn.index]
+
+# 'Close1': Close price of tommorow
+amzn['Close1'] = amzn.Close.shift(-1)
+
+# 'Profit': Daily profit using 'Shares' column
+amzn['Profit'] = [amzn.loc[element, 'Close1'] - amzn.loc[element, 'Close'] if amzn.loc[element, 'Shares'] == 1 else 0 for element in amzn.index]
+
+# Plot the "Profit" and finding the days we make or lose money.
+amzn['Profit'].plot()
+plt.axhline(y= 0, color = 'red');
+
+# Computing the 'Wealth', which is a cumulative sum of the profit all over the period
+amzn['Wealth'] = amzn['Profit'].cumsum()
+
+amzn.tail()
+
+# Wealth plot showing growth of profit over the period
+# In the last row, we have NaN values, because those returns are computed from Close1, and Close1 is calculated using shift(-1).
+# So, to get a terminal wealth using loc, the index level should be amzn.index[-2]. 
+f = amzn['Wealth'].plot()
+plt.title('Total Wealth created using this simple strategy %f' % (amzn.loc[amzn.index[-2], 'Wealth']));
+
+f.figure.savefig('wealth.png')
+from google.colab import files
+files.download('wealth.png')
+
+# Distribution of daily 'log return'
+amzn['LogReturn'] = np.log(amzn['Close'].shift(-1)) -  np.log(amzn['Close'])
+# Plotline 
+amzn['LogReturn'].plot(figsize = (20,7))
+plt.axhline(y= 0 , color = 'r');
+
+from scipy.stats import norm
+
+mu = amzn['LogReturn'].mean()
+sigma = amzn['LogReturn'].std(ddof=1)
+
+density = pd.DataFrame()
+density['x'] = np.arange(amzn['LogReturn'].min(), amzn['LogReturn'].max(), 0.001)
+density['pdf'] = norm.pdf(density['x'], mu, sigma)
+
+amzn['LogReturn'].hist(bins=50,figsize = (15,8))
+plt.plot(density['x'], density['pdf'], color = 'red');
+
+# Drop of amazon stock price upto 10 % over a day
+drop_amzn = norm.cdf(-0.1, mu, sigma)
+print('The probability is', drop_amzn)
+
+mu252_amzn = 252 * mu
+sigma252_amzn = (252 ** 0.5) * sigma
+
+# Drop upto 20 % over a period of year
+print('The probability of drop 20% over a year is', norm.cdf(-0.2, mu252_amzn, sigma252_amzn))
+
+# Drop upto 40% over a period of year
+print('The probability of drop 40% over a year is', norm.cdf(-0.4, mu252_amzn, sigma252_amzn))
+
+# 25 % and 75% quantile of amzn stock of return
+q25 = norm.ppf(0.25, mu, sigma)
+q75 = norm.ppf(0.75, mu, sigma)
+print('Quantile 25%:', q25)
+print('Quantile 75%:', q75)
+
+# Var: Value at Risk
+var_amzn = norm.ppf(0.05, mu, sigma)
+print('Var', var_amzn)
+
+# Log return column will be used here for 90% confidence interval
+sample_size_amzn = amzn['LogReturn'].shape[0]
+sample_mean_amzn = amzn['LogReturn'].mean()
+sample_std_amzn = amzn['LogReturn'].std(ddof=1)/ sample_size_amzn ** 0.5
+
+# Confidence intervals for this distribution
+left_interval = norm.ppf(0.05, sample_mean_amzn, sample_std_amzn)
+right_interval = norm.ppf(0.95, sample_mean_amzn, sample_std_amzn)
+
+print('90% Confidence interval is', (left_interval, right_interval))
+
+
+# Calculating test statistic for amazon
+sample_mean_amzn = amzn['LogReturn'].mean()
+sample_std_amzn  = amzn['LogReturn'].std(ddof=1)
+sample_size_amzn = amzn['LogReturn'].shape[0]
+
+# If the sample is size is large enough, we can use z-statistic 
+# μ = 0 under null hypothesis
+z_hat_amzn = (sample_mean_amzn - 0) / (sample_std_amzn / sample_size_amzn ** 0.5)
+print('zhat Amazon:', z_hat_amzn)
+
+# Set decision Criteria
+alpha = 0.05
+z_left = norm.ppf(alpha/2, 0, 1)
+z_right = - z_left
+
+print((z_left, z_right))
+
+# Shall we accept or reject H0
+print('At significant level of {}, shall we reject {}'.format(alpha, z_hat_amzn < z_left or z_hat_amzn > z_right))
+
+# Decision criteria
+alpha = 0.05
+zright = norm.ppf(1-alpha, 0, 1)
+print(zright)
+
+# Make decision
+print('At significant level of {}, shall we reject {}'.format(alpha, z_hat_amzn > zright))
+
+# Method to make decision p-value
+p = 1 - norm.cdf(abs(z_hat_amzn), 0, 1)
+print(p)
+
+print('At significant level of {}, shall we reject {}'.format(alpha, p < alpha))
+
+IndicePanel=pd.DataFrame(index=Spy.index)
+
+#US market
+IndicePanel['spy']=Spy['Open'].shift(-1)-Spy['Open']
+IndicePanel['spy_lag1']=IndicePanel['spy'].shift(1)
+IndicePanel['sp500']=SP500["Open"]-SP500['Open'].shift(1)
+IndicePanel['nasdaq']=Nasdaq_composite['Open']- Nasdaq_composite['Open'].shift(1)
+IndicePanel['dji']=Dji['Open']-Dji['Open'].shift(1)
+
+#European Market
+IndicePanel['cac40']=Cac40['Open']-Cac40['Open'].shift(1)
+IndicePanel['daxi']=Daxi['Open']-Daxi['Open'].shift(1)
+
+#Asian Market
+IndicePanel['hsi'] = Hsi['Close'] - Hsi['Open']
+IndicePanel['nikkei'] = Nikkei225['Close'] - Nikkei225['Open'] 
+IndicePanel['aord'] = Aord['Close']- Aord['Open']
+
+IndicePanel['Price'] = Spy['Open']
+
+IndicePanel.isnull().sum()
+
+
+# DATA MUNGING
+indicepanel = IndicePanel.fillna(method = 'ffill')
+indicepanel.dropna(how='any')
+indicepanel.isnull().sum()
+# save this indicepanel for part 4.5
+indicepanel.to_csv('indicepanel.csv')
+files.download('indicepanel.csv')
+
+print(indicepanel.shape)
+
+# DATA SPLITTING
+#split the data into train set and test set
+
+Train = indicepanel.iloc[-2449:-1234, :]
+Test = indicepanel.iloc[-1215:, :]
+print(Train.shape, Test.shape)
+
+# scatter_matrix
+from pandas.plotting import scatter_matrix
+
+sm = scatter_matrix(Train, grid= True, figsize = (20,10));
+
+# Find the indice with largest correlation
+corr_array = Train.iloc[:, :-1].corr()['spy']
+print(corr_array)
+
+formula = 'spy~spy_lag1+sp500+nasdaq+dji+cac40+aord+daxi+nikkei+hsi'
+lm = smf.ols(formula=formula, data=Train).fit()
+lm.summary()
+
+# Making Prediction
+Train['PredictedY'] = lm.predict(Train)
+Test['PredictedY'] = lm.predict(Test)
+
+plt.scatter(Train['spy'], Train['PredictedY'])
+
+# RMSE, Adj R^2
+# Parameter model is a model name and model k is the number of predictors. Y name is a column name of our response variable
+
+def adjustedMetric(data, model, model_k, yname):
+    data['yhat'] = model.predict(data)
+    SST = ((data[yname] - data[yname].mean())**2).sum()
+    SSR = ((data['yhat'] - data[yname].mean())**2).sum()
+    SSE = ((data[yname] - data['yhat'])**2).sum()
+    r2 = SSR/SST
+    adjustR2 = 1 - (1-r2)*(data.shape[0] - 1)/(data.shape[0] - model_k -1 )
+    RMSE = (SSE/(data.shape[0] - model_k - 1))**0.5
+    return adjustR2, RMSE
+
+def assessTable(test,train, model, model_k, yname):
+    r2test, RMSEtest = adjustedMetric(test,model, model_k, yname)
+    r2train, RMSEtrain = adjustedMetric(train, model, model_k, yname)
+    assessment = pd.DataFrame(index = ['R2', 'RMSE'], columns = ['Train', 'Test'])
+    assessment['Train'] = [r2train, RMSEtrain]
+    assessment['Test'] = [r2test,RMSEtest]
+    return assessment
+    
+
+# Assessment Table for our model
+assessTable(Test,Train,lm,9,'spy')
+
+# Profit of Signal-Based Strategy 
+# Train Data
+Train['Order'] = [1 if signal>0 else -1 for signal in Train['PredictedY']]
+
+# Daily profit is computed in column is profit. 
+Train['Profit'] = Train['spy'] * Train['Order']
+
+Train['Wealth'] = Train['Profit'].cumsum()
+print('Total profit made in Train: ', Train['Profit'].sum())
+
+plt.figure(figsize=(10, 10))
+plt.title('Performance of Strategy in Train')
+plt.plot(Train['Wealth'].values, color='green', label='Signal based strategy')
+plt.plot(Train['spy'].cumsum().values, color='red', label='Buy and Hold strategy')
+plt.legend()
+plt.savefig('signal(vs)buy_hold_strategy(Train_Data).png')
+files.download('signal(vs)buy_hold_strategy(Train_Data).png')
+
+# Proft of Signal-Based Strategy
+# Test Data
+Test['Order'] = [1 if sig>0 else -1 for sig in Test['PredictedY']]
+Test['Profit'] = Test['spy'] * Test['Order']
+
+Test['Wealth'] = Test['Profit'].cumsum()
+print('Total profit made in Test: ', Test['Profit'].sum())
+
+plt.figure(figsize=(10, 10))
+plt.title('Performance of Strategy in Test')
+plt.plot(Test['Wealth'].values, color='green', label='Signal based strategy')
+plt.plot(Test['spy'].cumsum().values, color='red', label='Buy and Hold strategy')
+plt.legend()
+plt.savefig('signal(vs)buy_hold_strategy(Test_Data).png')
+files.download('signal(vs)buy_hold_strategy(Test_Data).png');
+
+# INCLUDING The "initial investment" which is one price of SPY.
+Train['Wealth'] = Train['Wealth'] + Train.loc[Train.index[0], 'Price']
+Test['Wealth'] = Test['Wealth'] + Test.loc[Test.index[0], 'Price']
+
+# Sharpe Ratio on Train data
+Train['Return'] = np.log(Train['Wealth']) - np.log(Train['Wealth'].shift(1))
+dailyr = Train['Return'].dropna()
+
+print('Daily Sharpe Ratio of Train Data is', dailyr.mean()/dailyr.std(ddof=1))
+print('Yearly Sharpe Ratio of Train Data is', (252**0.5)*dailyr.mean()/dailyr.std(ddof=1))
+
+# Sharpe Ratio in Test data
+Test['Return'] = np.log(Test['Wealth']) - np.log(Test['Wealth'].shift(1))
+dailyr = Test['Return'].dropna()
+
+print('Daily Sharpe Ratio of Test Data is', dailyr.mean()/dailyr.std(ddof=1))
+print('Yearly Sharpe Ratio of Test Data is', (252**0.5)*dailyr.mean()/dailyr.std(ddof=1))
+
+# Maximum Drawdown in Train data
+Train['Peak'] = Train['Wealth'].cummax()
+Train['Drawdown'] = (Train['Peak'] - Train['Wealth'])/Train['Peak']
+
+# Maximum Drawdown in Test data
+Test['Peak'] = Test['Wealth'].cummax()
+Test['Drawdown'] = (Test['Peak'] - Test['Wealth'])/Test['Peak']
+
+
+print('Maximum Drawdown in Train is ', Train['Drawdown'].max())
+print('Maximum Drawdown in Test is ', Test['Drawdown'].max())
+
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+sns.set_style('darkgrid')
+plt.style.use('dark_background')
+
+# Stocks
+tech_list = ['AMZN', 'AAPL', 'FB', 'TSLA', 'GOOG', 'MSFT']
+company_list = [amzn,aapl,fb,tsla,google,ms]
+company_name = ['Amazon','Apple','Facebook','Tesla','Google','Microsoft']
+
+for company, name in zip(company_list,company_name):
+      company[company_name] = name
+
+
+ # Concatenated All stocks to df
+ df = pd.concat(company_list,axis = 0)
+ df.shape     
+
+# view of Adjusted Close prices 
+plt.figure(figsize=(25,10))
+
+for i,company in enumerate(company_list,1):
+      plt.subplot(2,3,i)
+      company['Adj Close'].plot()
+      plt.ylabel('Adj Close')
+      plt.xlabel(None)
+      plt.title(f'Closing Price of {company_name[i-1]}')
+
+plt.tight_layout()
+
+#Historical view of volume of stock buyers
+
+plt.figure(figsize =(25,10))
+
+for i,company in enumerate(company_list, 1):
+      plt.subplot(2,3,i)
+      company['Volume'].plot()
+      plt.ylabel('Volume')
+      plt.xlabel(None)
+      plt.title(f'Stocks Volume of {company_name[i-1]}')
+
+plt.tight_layout()
+
+
+# Moving Average
+avg_day = [10,20,50]
+
+for ma in avg_day:
+    for company in company_list:
+        column_name = f'MA for {ma} days'
+        company[column_name] = company['Adj Close'].rolling(ma).mean()
+
+
+# Trend plots of moving average
+
+fig,axes = plt.subplots(nrows=3, ncols = 2)
+fig.set_figheight(10)
+fig.set_figwidth(20)
+
+amzn[['Adj Close', 'MA for 10 days', 'MA for 20 days', 'MA for 50 days']].plot(ax=axes[0,0])
+axes[0,0].set_title('Amazon')
+
+aapl[['Adj Close', 'MA for 10 days', 'MA for 20 days', 'MA for 50 days']].plot(ax=axes[0,1])
+axes[0,1].set_title('Apple')
+
+fb[['Adj Close', 'MA for 10 days', 'MA for 20 days', 'MA for 50 days']].plot(ax=axes[1,0])
+axes[1,0].set_title('Facebook')
+
+tsla[['Adj Close', 'MA for 10 days', 'MA for 20 days', 'MA for 50 days']].plot(ax=axes[1,1])
+axes[1,1].set_title('Tesla')
+
+google[['Adj Close', 'MA for 10 days', 'MA for 20 days', 'MA for 50 days']].plot(ax=axes[2,0])
+axes[2,0].set_title('Google')
+
+ms[['Adj Close', 'MA for 10 days', 'MA for 20 days', 'MA for 50 days']].plot(ax=axes[2,1])
+axes[2,1].set_title('Microsoft')
+
+fig.tight_layout()
+
+
+
+for company in company_list:
+      company['Daily Return'] = company['Adj Close'].pct_change()
+
+# Daily retun percentages
+
+fig, axes = plt.subplots(nrows=3, ncols=2)
+fig.set_figheight(10)
+fig.set_figwidth(20)
+
+amzn['Daily Return'].plot(ax=axes[0,0], legend = True, linestyle = '--', marker ='o')
+axes[0,0].set_title('Amazon')
+
+aapl['Daily Return'].plot(ax=axes[0,1], legend = True, linestyle = '--', marker ='o')
+axes[0,1].set_title('Apple')
+
+fb['Daily Return'].plot(ax=axes[1,0], legend = True, linestyle = '--', marker ='o')
+axes[1,0].set_title('Facebook')
+
+tsla['Daily Return'].plot(ax=axes[1,1], legend = True, linestyle = '--', marker ='o')
+axes[1,1].set_title('Tesla')
+
+google['Daily Return'].plot(ax=axes[2,0], legend = True, linestyle = '--', marker ='o')
+axes[2,0].set_title('Google')
+
+ms['Daily Return'].plot(ax=axes[2,1], legend = True, linestyle = '--', marker ='o')
+axes[2,1].set_title('Microsoft')
+
+plt.tight_layout()
+
+
+
+
+
+
+plt.figure(figsize = (20,10))
+
+for i, company in enumerate(company_list, 1):
+      plt.subplot(3,2,i)
+      sns.distplot(company['Daily Return'].dropna(), bins = 100, color = 'red')
+      plt.ylabel('Daily Return')
+      plt.title(f'{company_name[i-1]}')
+
+plt.tight_layout()
+
+# Assigning only closing prices of stocks into a dataframe
+close_df = pd.DataFrame()
+close_df = close_df.assign(Amazon = amzn['Adj Close'], Apple = aapl['Adj Close'], 
+                           Facebook = fb['Adj Close'], Tesla = tsla['Adj Close'], 
+                           Google = google['Adj Close'], Microsoft = ms['Adj Close'])
+close_df
+
+# Daily returns of all the stocks 
+daily_returns= close_df.pct_change()
+daily_returns.head()
+
+sns.jointplot('Google', 'Microsoft', daily_returns, kind='scatter')
+
+# You can see the linear relationship if you compare the stock to its own.
+sns.jointplot('Google', 'Google', daily_returns, kind='scatter', color='seagreen')
+
+sns.pairplot(daily_returns, kind='reg')
+
+return_fig = sns.PairGrid(daily_returns.dropna())
+
+# Using map_upper we can specify what the upper triangle will look like.
+return_fig.map_upper(plt.scatter, color='red')
+
+# We can also define the lower triangle in the figure, inclufing the plot type (kde) 
+# or the color map (BluePurple)
+return_fig.map_lower(sns.kdeplot, cmap='cool_d')
+
+# Finally we'll define the diagonal as a series of histogram plots of the daily return
+return_fig.map_diag(plt.hist, bins=30)
+
+# For the close_df dataframe
+returns_fig = sns.PairGrid(close_df)
+returns_fig.map_upper(plt.scatter, color = 'red')
+returns_fig.map_lower(sns.kdeplot, cmap = 'cool_d')
+returns_fig.map_diag(plt.hist,bins= 30 )
+
+#correlation matrix for daily returns
+sns.heatmap(daily_returns.corr(),annot= True,cmap= 'summer')
+
+#correlation matrix for closing values of stocks
+map = sns.heatmap(close_df.corr(),annot= True,cmap= 'summer')
+map.figure.savefig('stocks_heatmap.png')
+files.download('stocks_heatmap.png')
+
+
+# Risk putting on stock
+returns = daily_returns.dropna()
+area =  np.pi * 20
+
+plt.figure(figsize = (15,7))
+plt.scatter(returns.mean(), returns.std(),s= area)
+plt.xlabel('Expected Return')
+plt.ylabel('Risk')
+
+for label, x, y in zip(returns.columns, returns.mean(), returns.std()):
+    plt.annotate(label, xy = (x, y), xytext = (50,50), textcoords = 'offset pixels', ha = 'right', va = 'bottom',arrowprops=dict(arrowstyle='-', color='red', connectionstyle='arc'))
+    plt.savefig('risk_on_stock.png')
+    files.download('risk_on_stock.png')
+
+# Amazon Stock
+from datetime import datetime
+df_amazon = yf.download('AMZN', start = '2012-01-01', end = datetime.now())
+df_amazon
+
+plt.figure(figsize = (16,6))
+plt.title('Amazon closing history')
+plt.plot(df_amazon['Close'])
+plt.xlabel('Date', fontsize = 18)
+plt.ylabel('Close price USD ($)', fontsize = 18);
+
+# DataFrame with 'Close' column
+close = df_amazon.filter(['Close'])
+closeset = close.values
+training_data_len = int(np.ceil(len(closeset)* 0.95))
+training_data_len
+
+# Feature Scaling
+# Scaling the data for optimal performance so using MinMax Scaler to scale data between 0 and 1.
+from sklearn.preprocessing import MinMaxScaler
+scaler = MinMaxScaler(feature_range = (0,1))
+scaler_data = scaler.fit_transform(closeset)
+scaler_data
+
+# Creating training set and testing set
+train_data = scaler_data[0:int(training_data_len), :]
+
+x_train = []
+y_train = []
+
+for i in range(60, len(train_data)):
+      x_train.append(train_data[i-60:i, 0])
+      y_train.append(train_data[i,0])
+      if i<=61:
+          print(x_train)
+          print(y_train)
+          print()
+
+x_train,y_train = np.array(x_train), np.array(y_train)
+
+x_train = np.reshape(x_train, (x_train.shape[0], x_train.shape[1], 1))
+
+from keras.models import Sequential
+from keras.layers import Dense, LSTM
+
+#LSTM model
+model = Sequential()
+model.add(LSTM(128,return_sequences= True, input_shape = (x_train.shape[1], 1)))
+model.add(LSTM(64, return_sequences =False))
+model.add(Dense(25))
+model.add(Dense(1))
+
+model.compile(optimizer='adam', loss= 'mean_squared_error')
+model.fit(x_train,y_train, batch_size = 1, epochs = 1)
+
+# Set the time ste as 60
+test_data = scaler_data[training_data_len - 60: , :]
+x_test = []
+y_test = closeset[training_data_len:, :]
+for i in range(60, len(test_data)):
+      x_test.append(test_data[i-60:i, 0])
+
+# Reshape the data
+x_test = np.array(x_test)
+x_test = np.reshape(x_test, (x_test.shape[0], x_test.shape[1], 1))
+
+# Model Predicted Values
+predictions = model.predict(x_test)
+predictions = scaler.inverse_transform(predictions)
+
+# RMSE
+rmse = np.sqrt(np.mean(((predictions - y_test) ** 2)))
+rmse
+
+
+train = close[:training_data_len]
+results = close[training_data_len:]
+results['Predictions'] = predictions
+
+# Visualize the data
+plt.figure(figsize=(16,6))
+plt.title('Model')
+plt.xlabel('Date', fontsize=18)
+plt.ylabel('Close Price USD ($)', fontsize=18)
+plt.plot(train['Close'], color = 'red', label = 'Train')
+plt.plot(results['Close'], color = 'seagreen', label = 'Valid')
+plt.plot(results['Predictions'], color = 'yellow', label = 'Predictions')
+plt.legend(['Train', 'Valid', 'Predictions'], loc='lower right')
+plt.savefig('model_forecast.png')
+files.download('model_forecast.png');
+
+
+results
