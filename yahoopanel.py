@@ -9,8 +9,6 @@ class YahooPanel:
     # def __init__(self, ticker : str):
     #     self.ticker = ticker
 
-
-    
     def get_today(self):
         now = datetime.datetime.now()
         today = datetime.date.today()
