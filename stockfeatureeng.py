@@ -8,7 +8,7 @@ from scipy.stats import norm
 import warnings 
 warnings.filterwarnings("ignore")
 
-from yahoopanel import YahooPanel
+from backend.yahoopanel import YahooPanel
 
 class StockFeatureEngineering:
     def __init__(self, stock_data):
@@ -142,8 +142,6 @@ class StockFeatureEngineering:
         # For p-value
         p = 1 - norm.cdf(abs(z_hat), 0, 1)
         print('At significant level of {}, shall we reject {}'.format(alpha, p < alpha))
-
-
 
 
 
